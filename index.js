@@ -3,9 +3,9 @@ const qrcode = require('qrcode-terminal');
 const axios = require('axios');
 const Papa = require('papaparse');
 const express = require('express');
-const puppeteer = require('puppeteer'); // <-- Importamos el mapa del navegador
+const puppeteer = require('puppeteer');
 
-// 1. TRAMPA PARA RENDER: Puerto web falso
+// 1. TRAMPA PARA RENDER (INTOCABLE)
 const app = express();
 const port = process.env.PORT || 3000;
 app.get('/', (req, res) => res.send('🤖 Servidor S.I.G.A. Activo y funcionando.'));
@@ -18,7 +18,7 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i31
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { 
-        executablePath: puppeteer.executablePath(), // <-- EL PUENTE DE ORO
+        executablePath: puppeteer.executablePath(),
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox', 
@@ -34,7 +34,7 @@ const client = new Client({
 
 client.on('qr', (qr) => {
     console.log('=========================================');
-    console.log('CÓDIGO QR GENERADO. ESCANEE CON WHATSAPP:');
+    console.log('CÓDIGO QR REQUERIDO. ESCANEE CON WHATSAPP:');
     qrcode.generate(qr, { small: true });
     console.log('=========================================');
 });
@@ -43,18 +43,49 @@ client.on('ready', () => {
     console.log('🤖 AGENTE S.I.G.A. EN LÍNEA Y OPERATIVO.');
 });
 
+// ---------------------------------------------------------
+// 🧠 CEREBRO DEL BOT: RECEPCIÓN DE MENSAJES
+// ---------------------------------------------------------
 client.on('message', async msg => {
     const texto = msg.body.toLowerCase().trim();
 
-    if (texto === 'hola' || texto === 'menu' || texto === 'siga') {
-        const respuesta = `*TERMINAL S.I.G.A. - SAN JOSÉ EN MARCHA* 🦅\n\n` +
-                          `Bienvenido al Desencriptador Cívico.\n\n` +
-                          `Para traducir un término, escriba la palabra *SIGA* seguida de lo que busca.\n\n` +
-                          `👉 *Ejemplos:* \nsiga viaticos\nsiga tocaf`;
-        msg.reply(respuesta);
+    // 1️⃣ SALUDO Y DESPLIEGUE DEL MENÚ PRINCIPAL
+    const saludos = ['hola', 'menu', 'menú', 'buenas', 'buen dia', 'buen día', 'buenas tardes', 'buenas noches'];
+    
+    if (saludos.includes(texto)) {
+        const menu = `*TERMINAL S.I.G.A. - SAN JOSÉ EN MARCHA* 🦅\n\n` +
+                     `¡Hola! Soy tu asistente ciudadano. ¿En qué te puedo ayudar hoy? 👇\n\n` +
+                     `Responde con el *NÚMERO* de la opción:\n\n` +
+                     `*1️⃣* 📖 Desencriptador Cívico (Diccionario)\n` +
+                     `*2️⃣* 🚧 Reportar un problema en mi barrio\n` +
+                     `*3️⃣* 🏛️ Info y Horarios de la Intendencia\n` +
+                     `*4️⃣* 👤 Hablar con el equipo (Humano)`;
+        msg.reply(menu);
         return;
     }
 
+    // 2️⃣ RESPUESTAS A LAS OPCIONES NUMÉRICAS
+    if (texto === '1') {
+        msg.reply(`📖 *MODO DESENCRIPTADOR ACTIVO*\n\nPara traducir un término burocrático, escribe la palabra *SIGA* seguida de lo que buscas.\n\n👉 *Ejemplos:* \nsiga viaticos\nsiga tocaf\nsiga licitacion`);
+        return;
+    }
+
+    if (texto === '2') {
+        msg.reply(`🚧 *REPORTE CIUDADANO*\n\nEstamos construyendo esta central para que puedas enviarnos fotos de baches, luces rotas o basurales, y nosotros llevaremos el reclamo. ¡Pronto estará disponible! 🛠️`);
+        return;
+    }
+
+    if (texto === '3') {
+        msg.reply(`🏛️ *INFO INTENDENCIA DE SAN JOSÉ*\n\n📍 *Dirección:* Asamblea 496, San José de Mayo.\n🕒 *Atención al público:* Lunes a Viernes de 09:00 a 15:00 hs.\n📞 *Teléfono:* 4322 5015`);
+        return;
+    }
+
+    if (texto === '4') {
+        msg.reply(`👤 *CONEXIÓN HUMANA*\n\nHe notificado al equipo de San José en Marcha. Un compañero leerá tu mensaje y te responderá por este mismo chat a la brevedad. 🦅`);
+        return;
+    }
+
+    // 3️⃣ BUSCADOR DEL DICCIONARIO (EL NÚCLEO ORIGINAL)
     if (texto.startsWith('siga ')) {
         const busqueda = texto.replace('siga ', '').trim();
         try {
