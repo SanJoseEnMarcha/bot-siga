@@ -1,11 +1,11 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const qrcode = require('qrcode-terminal');
 const axios = require('axios');
 const Papa = require('papaparse');
 const express = require('express');
 
-// 1. TRAMPA PARA RENDER (El puerto falso)
+// 1. TRAMPA PARA RENDER
 const app = express();
 const port = process.env.PORT || 3000;
 app.get('/', (req, res) => res.send('🤖 Servidor S.I.G.A. (Motor Baileys) Activo y funcionando.'));
@@ -14,22 +14,19 @@ app.listen(port, '0.0.0.0', () => console.log(`📡 Puerto web abierto en ${port
 // 2. CONFIGURACIÓN DE BASE DE DATOS
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i310MNaCMYnaSbd1vsl-UjoACcth4hYq9pgq920NATvMyQZTXS_PbP8kA8nxjDRWcj-/pub?output=csv';
 
-// 3. NUEVO MOTOR LIGERO (BAILEYS)
+// 3. NUEVO MOTOR LIGERO (BAILEYS) CON CAMUFLAJE
 async function iniciarAgenteSIGA() {
-    // Esto guarda la sesión para no pedir QR a cada rato
     const { state, saveCreds } = await useMultiFileAuthState('sesion_siga');
 
     const sock = makeWASocket({
         auth: state,
-        printQRInTerminal: false, // Lo imprimimos nosotros manualmente abajo
-        logger: pino({ level: 'silent' }), // Apaga los mensajes molestos del sistema
-        browser: ["SIGA San Jose", "Chrome", "1.0.0"]
+        printQRInTerminal: false, 
+        logger: pino({ level: 'silent' }),
+        browser: Browsers.macOS('Desktop') // 🎭 EL CAMUFLAJE: Nos hacemos pasar por una Mac
     });
 
-    // Guardar credenciales automáticamente
     sock.ev.on('creds.update', saveCreds);
 
-    // Control de conexión
     sock.ev.on('connection.update', (update) => {
         const { connection, lastDisconnect, qr } = update;
         
@@ -43,25 +40,25 @@ async function iniciarAgenteSIGA() {
         if (connection === 'close') {
             const reconectar = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
             console.log('⚠️ Conexión cerrada. Reconectando:', reconectar);
-            if (reconectar) iniciarAgenteSIGA();
+            // FRENO DE MANO: Esperar 3 segundos antes de volver a intentar
+            if (reconectar) {
+                setTimeout(iniciarAgenteSIGA, 3000); 
+            }
         } else if (connection === 'open') {
             console.log('🤖 AGENTE S.I.G.A. EN LÍNEA Y OPERATIVO (MOTOR LIGERO).');
         }
     });
 
-    // Recepción de mensajes
     sock.ev.on('messages.upsert', async m => {
         const msg = m.messages[0];
-        if (!msg.message || msg.key.fromMe) return; // Ignora los mensajes que envía el propio bot
+        if (!msg.message || msg.key.fromMe) return;
 
-        // Extraer el texto (Baileys lo guarda de forma diferente)
         const textoIn = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
         const texto = textoIn.toLowerCase().trim();
         const remitente = msg.key.remoteJid;
 
         if (!texto) return;
 
-        // --- LÓGICA DEL MENÚ ---
         const saludos = ['hola', 'menu', 'menú', 'buenas', 'buen dia', 'buen día'];
         
         if (saludos.includes(texto)) {
@@ -96,7 +93,6 @@ async function iniciarAgenteSIGA() {
             return;
         }
 
-        // --- LÓGICA DEL DICCIONARIO ---
         if (texto.startsWith('siga ')) {
             const busqueda = texto.replace('siga ', '').trim();
             try {
