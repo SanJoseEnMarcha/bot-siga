@@ -4,19 +4,29 @@ const axios = require('axios');
 const Papa = require('papaparse');
 const express = require('express');
 
-// 1. TRAMPA PARA RENDER: Abrimos un puerto web falso para que no nos apague el bot
+// 1. TRAMPA PARA RENDER MÁS FUERTE: Dirección 0.0.0.0
 const app = express();
 const port = process.env.PORT || 3000;
 app.get('/', (req, res) => res.send('🤖 Servidor S.I.G.A. Activo y funcionando.'));
-app.listen(port, () => console.log(`📡 Puerto web abierto en ${port} para mantener vivo el sistema.`));
+app.listen(port, '0.0.0.0', () => console.log(`📡 Puerto web abierto en ${port} para mantener vivo el sistema.`));
 
 // 2. CONFIGURACIÓN DEL BOT
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i310MNaCMYnaSbd1vsl-UjoACcth4hYq9pgq920NATvMyQZTXS_PbP8kA8nxjDRWcj-/pub?output=csv';
 
+// DIETA EXTREMA DE MEMORIA PARA SOBREVIVIR CON 512MB
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: { 
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox', 
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process', // <-- LA CLAVE PARA AHORRAR RAM
+            '--disable-gpu'
+        ]
     }
 });
 
