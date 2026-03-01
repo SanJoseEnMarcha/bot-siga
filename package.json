@@ -1,17 +1,14 @@
 {
   "name": "bot-siga",
-  "version": "1.0.0",
-  "description": "Agente automatizado de WhatsApp para S.I.G.A.",
+  "version": "2.0.0",
+  "description": "Agente Oficial Meta API para S.I.G.A.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.7.5",
-    "pino": "^8.19.0",
-    "qrcode-terminal": "^0.12.0",
     "axios": "^1.6.7",
-    "papaparse": "^5.4.1",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "papaparse": "^5.4.1"
   }
 }
