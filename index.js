@@ -16,13 +16,14 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i31
 
 // 3. NUEVO MOTOR LIGERO (BAILEYS) CON CAMUFLAJE
 async function iniciarAgenteSIGA() {
-    const { state, saveCreds } = await useMultiFileAuthState('sesion_siga');
+    // 🧠 AMNESIA FORZADA: Cambiamos el nombre de la carpeta a v2 para ignorar la basura anterior
+    const { state, saveCreds } = await useMultiFileAuthState('sesion_siga_v2');
 
     const sock = makeWASocket({
         auth: state,
         printQRInTerminal: false, 
         logger: pino({ level: 'silent' }),
-        browser: Browsers.macOS('Desktop') // 🎭 EL CAMUFLAJE: Nos hacemos pasar por una Mac
+        browser: Browsers.macOS('Desktop') 
     });
 
     sock.ev.on('creds.update', saveCreds);
@@ -40,7 +41,6 @@ async function iniciarAgenteSIGA() {
         if (connection === 'close') {
             const reconectar = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
             console.log('⚠️ Conexión cerrada. Reconectando:', reconectar);
-            // FRENO DE MANO: Esperar 3 segundos antes de volver a intentar
             if (reconectar) {
                 setTimeout(iniciarAgenteSIGA, 3000); 
             }
