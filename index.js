@@ -6,10 +6,14 @@ const Papa = require('papaparse');
 // ⚠️ ENLACE AL DICCIONARIO S.I.G.A. EN GOOGLE DRIVE
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i310MNaCMYnaSbd1vsl-UjoACcth4hYq9pgq920NATvMyQZTXS_PbP8kA8nxjDRWcj-/pub?output=csv';
 
-// Inicializar el bot 
+// Inicializar el bot forzando la ruta del navegador
 const client = new Client({
     authStrategy: new LocalAuth(),
-    puppeteer: { args: ['--no-sandbox', '--disable-setuid-sandbox'] }
+    puppeteer: { 
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        // 🚨 ESTA ES LA LÍNEA TÁCTICA: Le decimos dónde está Chrome
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome-stable'
+    }
 });
 
 // Generar QR para escanear
