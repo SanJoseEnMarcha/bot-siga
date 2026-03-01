@@ -7,13 +7,15 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 10000;
 const META_TOKEN = process.env.META_TOKEN ? process.env.META_TOKEN.trim() : null;
-const PHONE_NUMBER_ID = '961831007021911'; 
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i310MNaCMYnaSbd1vsl-UjoACcth4hYq9pgq920NATvMyQZTXS_PbP8kA8nxjDRWcj-/pub?output=csv';
 
+// --- IDENTIFICADOR OFICIAL DE URUGUAY ---
+const PHONE_NUMBER_ID = '700280776495393'; 
+
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i310MNaCMYnaSbd1vsl-UjoACcth4hYq9pgq920NATvMyQZTXS_PbP8kA8nxjDRWcj-/pub?output=csv';
 const TG_TOKEN = process.env.TELEGRAM_TOKEN;
 const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// --- INTERFAZ VISUAL DE ALTO IMPACTO ---
+// --- INTERFAZ DE ALTO IMPACTO ---
 async function enviarMenuPrincipal(remitente) {
     try {
         await axios({
@@ -27,15 +29,15 @@ async function enviarMenuPrincipal(remitente) {
                 interactive: {
                     type: 'list',
                     header: { type: 'text', text: '🦅 SISTEMA S.I.G.A.' },
-                    body: { text: '*Bienvenido a la IA de San José en Marcha.*\n\nSoy tu puente directo con la gestión. Aquí puedes auditar, reportar y entender cómo avanza nuestro departamento.\n\n_¿En qué frente operamos hoy?_' },
-                    footer: { text: 'Transparencia Radical | 2026' },
+                    body: { text: '*Bienvenido a la IA de San José en Marcha.*\n\nSoy tu puente directo con la gestión departamental. Aquí puedes auditar, reportar y entender cómo avanza San José.\n\n_¿En qué frente operamos hoy?_' },
+                    footer: { text: 'Transparencia Radical | SanJoséEnMarcha.uy' },
                     action: {
                         button: 'DESPLEGAR MENÚ',
                         sections: [
                             {
                                 title: '🔍 TRANSPARENCIA ACTIVA',
                                 rows: [
-                                    { id: 'opt_1', title: 'Diccionario SIGA', description: 'Traduce términos técnicos de la Intendencia' },
+                                    { id: 'opt_1', title: 'S.I.G.A. Explica', description: 'Traduce términos técnicos y mitos' },
                                     { id: 'opt_6', title: 'Canal de Novedades', description: 'Únete a nuestra comunidad oficial' }
                                 ]
                             },
@@ -65,7 +67,6 @@ async function enviarRespuestaIA(remitente, titulo, contenido, link = "") {
     let cuerpo = `${titulo}\n\n${contenido}`;
     if(link) cuerpo += `\n\n🔗 *Enlace:* ${link}`;
     cuerpo += `\n\n__________________________\n_Envía *0* para el Menú o visita_\n*SanJoseEnMarcha.uy* 🦅`;
-
     try {
         await axios({
             method: 'POST',
@@ -76,7 +77,7 @@ async function enviarRespuestaIA(remitente, titulo, contenido, link = "") {
     } catch (e) { console.error("Error Respuesta:", e.response?.data || e.message); }
 }
 
-// --- WEBHOOK ---
+// --- WEBHOOK INTELIGENTE ---
 app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
     try {
@@ -92,32 +93,20 @@ app.post('/webhook', async (req, res) => {
             input = msg.interactive.list_reply?.id || "";
         }
 
-        // --- RADAR DE SALUDOS AMPLIADO ---
-        const disparadores = [
-            'hola', 'ola', 'buenas', 'buen dia', 'buenas tardes', 'buenas noches', 
-            'q tal', 'que tal', 'como va', 'como estas', 'hey', 'hi', 'hello',
-            'menu', '0', '.', 'inicio', 'siga', 'ayuda', 'info', 'comandante'
-        ];
-
+        const disparadores = ['hola', 'ola', 'buenas', 'buen dia', 'q tal', 'que tal', 'menu', '0', '.', 'inicio', 'siga', 'ayuda'];
         if (disparadores.includes(input) || input.length <= 2 || input === "") {
-            await enviarMenuPrincipal(remitente);
-            return;
+            await enviarMenuPrincipal(remitente); return;
         }
 
-        // --- DETECCIÓN DE INTENCIONES ---
-        if (input.includes('denuncia') || input.includes('corrupcion') || input.includes('queja')) {
-            input = 'opt_2';
-        } else if (input.includes('bache') || input.includes('luz') || input.includes('calle') || input.includes('basura')) {
-            input = 'opt_3';
-        }
+        if (input.includes('denuncia') || input.includes('queja')) input = 'opt_2';
+        else if (input.includes('bache') || input.includes('luz') || input.includes('basura')) input = 'opt_3';
 
-        // --- LÓGICA DE OPCIONES ---
         switch(input) {
             case 'opt_1':
-                await enviarRespuestaIA(remitente, "📖 *DICCIONARIO SIGA*", "La gestión no debe ser un secreto. Escribe cualquier término que no entiendas.\n\n_Ejemplo: licitación, viáticos, TOCAF._");
+                await enviarRespuestaIA(remitente, "📖 *S.I.G.A. EXPLICA*", "La gestión no debe ser un secreto. Escribe cualquier término que no entiendas.\n\n_Ejemplo: licitación, viáticos, TOCAF._");
                 break;
             case 'opt_2':
-                await enviarRespuestaIA(remitente, "⚖️ *TRANSPARENCIA TOTAL*", "Tu denuncia es procesada con total reserva. San José en Marcha vigila por ti.", "https://sanjoseenmarcha.uy/denuncias");
+                await enviarRespuestaIA(remitente, "⚖️ *TRANSPARENCIA TOTAL*", "Tu denuncia es procesada con reserva. San José en Marcha vigila por ti.", "https://sanjoseenmarcha.uy/denuncias");
                 break;
             case 'opt_3':
                 await enviarRespuestaIA(remitente, "🚧 *MONITOR TERRITORIAL*", "Tu reporte alimenta el mapa de gestión en tiempo real.", "https://sanjoseenmarcha.uy/monitor-territorial");
@@ -136,29 +125,25 @@ app.post('/webhook', async (req, res) => {
                 break;
         }
 
-        // --- BÚSQUEDA EN DICCIONARIO ---
         if (input.length > 2 && !input.startsWith('opt_')) {
             const query = input.replace('siga ', '').trim();
             const resp = await axios.get(CSV_URL);
             const data = Papa.parse(resp.data, { header: true, skipEmptyLines: true }).data;
             const resu = data.find(i => {
                 const p = i.Palabra?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
-                const k = i.Keywords?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
-                return p.includes(query) || k.includes(query);
+                return p.includes(query);
             });
-
             if (resu) {
                 let info = `*Término:* ${resu.Palabra}\n\n🏛️ *Explicación:* ${resu['Traduccion SIGA']}`;
-                if(resu.Impacto) info += `\n\n⚠️ *Dato Clave:* ${resu.Impacto.replace(/<[^>]*>?/gm, '')}`;
+                if(resu.Impacto) info += `\n\n⚠️ *Dato:* ${resu.Impacto.replace(/<[^>]*>?/gm, '')}`;
                 await enviarRespuestaIA(remitente, "📖 *CONOCIMIENTO SIGA*", info);
             }
         }
-
-    } catch (e) { console.error("Error:", e); }
+    } catch (e) { console.error(e); }
 });
 
 app.get('/webhook', (req, res) => {
     if (req.query["hub.verify_token"] === 'SIGAMARCHA2026') res.status(200).send(req.query["hub.challenge"]);
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA v4.1 - RADAR AMPLIADO`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v4.5 ONLINE`));
