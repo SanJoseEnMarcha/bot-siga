@@ -13,7 +13,7 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i31
 const TG_TOKEN = process.env.TELEGRAM_TOKEN;
 const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// --- FUNCIÓN PARA ENVIAR BOTONES (LISTA INTERACTIVA) ---
+// --- MOTOR DE RESPUESTAS INTERACTIVAS ---
 async function enviarMenuBotones(remitente) {
     try {
         await axios({
@@ -26,114 +26,127 @@ async function enviarMenuBotones(remitente) {
                 type: 'interactive',
                 interactive: {
                     type: 'list',
-                    header: { type: 'text', text: '🦅 Terminal S.I.G.A.' },
-                    body: { text: '¡Hola! Soy *BOT-Siga*, la IA de *San José en Marcha*. Estoy aquí para ayudarte a entender la gestión y mejorar nuestro departamento.\n\n¿Qué frente operamos hoy?' },
-                    footer: { text: 'Más info en: SanJoseEnMarcha.uy' },
+                    header: { type: 'text', text: '🦅 Eje Central S.I.G.A.' },
+                    body: { text: 'Soy *BOT-Siga*, la inteligencia de *San José en Marcha*.\n\nHe sido diseñado para romper el muro entre la Intendencia y tú. ¿En qué frente operamos hoy?' },
+                    footer: { text: 'Transparencia total en SanJoseEnMarcha.uy' },
                     action: {
-                        button: 'Ver Opciones',
-                        sections: [{
-                            title: 'Gestión Ciudadana',
-                            rows: [
-                                { id: 'btn_1', title: '📖 Diccionario Cívico', description: 'Desencripta la burocracia' },
-                                { id: 'btn_2', title: '⚖️ Realizar Denuncia', description: 'Canal seguro y transparente' },
-                                { id: 'btn_3', title: '🚧 Reclamos (Monitor)', description: 'Baches, luces y más' },
-                                { id: 'btn_4', title: '🏛️ Info Intendencia', description: 'Horarios y Gabinete' },
-                                { id: 'btn_5', title: '👤 Hablar con Equipo', description: 'Atención por un humano' }
-                            ]
-                        }]
+                        button: 'Abrir Panel',
+                        sections: [
+                            {
+                                title: '🔍 TRANSPARENCIA Y LÉXICO',
+                                rows: [
+                                    { id: 'btn_1', title: '📖 Diccionario Cívico', description: 'Traduce la burocracia a idioma vecino' }
+                                ]
+                            },
+                            {
+                                title: '🚧 ACCIÓN TERRITORIAL',
+                                rows: [
+                                    { id: 'btn_2', title: '⚖️ Denuncia Segura', description: 'Reporta irregularidades con reserva' },
+                                    { id: 'btn_3', title: '📍 Reclamos Inteligentes', description: 'Monitor Territorial de San José' }
+                                ]
+                            },
+                            {
+                                title: '🏛️ INSTITUCIONAL',
+                                rows: [
+                                    { id: 'btn_4', title: '👥 Gabinete y Horarios', description: 'Quién es quién en la gestión' },
+                                    { id: 'btn_5', title: '👤 Contacto Directo', description: 'Habla con un integrante del equipo' }
+                                ]
+                            }
+                        ]
                     }
                 }
             }
         });
-    } catch (e) { console.error("Error enviando botones:", e.response?.data || e.message); }
+    } catch (e) { console.error("Error botones:", e.response?.data || e.message); }
 }
 
-// --- FUNCIÓN PARA MENSAJES DE TEXTO SIMPLES ---
-async function enviarMensaje(remitente, texto) {
+async function enviarRespuestaIA(remitente, titulo, contenido, link = "") {
+    let cuerpo = `${titulo}\n\n${contenido}`;
+    if(link) cuerpo += `\n\n🔗 *Más info:* ${link}`;
+    cuerpo += `\n\n__________________________\n_Escribe *0* para el Menú o visita_\n*SanJoseEnMarcha.uy* 🦅`;
+
     try {
         await axios({
             method: 'POST',
             url: `https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`,
             headers: { 'Authorization': `Bearer ${META_TOKEN}`, 'Content-Type': 'application/json' },
-            data: {
-                messaging_product: 'whatsapp',
-                to: remitente,
-                text: { body: texto + `\n\n_Escribe *0* o *Menú* para volver._ 🔙` }
-            }
+            data: { messaging_product: 'whatsapp', to: remitente, text: { body: cuerpo } }
         });
-    } catch (e) { console.error("❌ Error Meta:", e.response?.data || e.message); }
+    } catch (e) { console.error("Error Meta:", e.response?.data || e.message); }
 }
 
-// --- WEBHOOK ---
-app.get('/webhook', (req, res) => {
-    if (req.query["hub.verify_token"] === 'SIGAMARCHA2026') res.status(200).send(req.query["hub.challenge"]);
-});
-
+// --- WEBHOOK PRINCIPAL ---
 app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
     try {
-        const entry = req.body.entry?.[0]?.changes?.[0]?.value;
-        if (!entry?.messages?.[0]) return;
-
-        const msg = entry.messages[0];
+        const val = req.body.entry?.[0]?.changes?.[0]?.value;
+        if (!val?.messages?.[0]) return;
+        const msg = val.messages[0];
         const remitente = msg.from;
-        let texto = "";
 
-        // CAPTURAR SI ES TEXTO O SI ES UN BOTÓN PRESIONADO
-        if (msg.type === 'text') {
-            texto = msg.text.body.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-        } else if (msg.type === 'interactive') {
-            texto = msg.interactive.list_reply?.id || "";
+        // 1. DETECCIÓN DE UBICACIÓN (INNOVACIÓN GPS)
+        if (msg.type === 'location') {
+            await enviarRespuestaIA(remitente, "📍 *UBICACIÓN RECIBIDA*", "He detectado tus coordenadas. En San José en Marcha usamos esta tecnología para que tu reclamo sea exacto. \n\nPara completar el reporte en el mapa oficial, pulsa aquí:", "https://sanjoseenmarcha.uy/monitor-territorial");
+            return;
         }
 
-        // 1. DISPARADOR DE MENÚ (Si saluda, pone un punto, escribe 0, etc.)
-        const disparadores = ['hola', 'menu', '0', 'inicio', 'buenas', 'buen dia', '.', 'info', 'ayuda'];
-        if (disparadores.includes(texto) || texto === "") {
+        let input = "";
+        if (msg.type === 'text') input = msg.text.body.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        else if (msg.type === 'interactive') input = msg.interactive.list_reply?.id || "";
+
+        // SALUDOS Y RESET
+        if (['hola', 'menu', '0', '.', 'buenas', 'info', 'inicio'].includes(input) || input === "") {
             await enviarMenuBotones(remitente);
             return;
         }
 
-        // 2. LÓGICA DE RESPUESTAS SEGÚN BOTÓN O NÚMERO
-        if (texto === 'btn_1' || texto === '1') {
-            await enviarMensaje(remitente, `📖 *MODO DESENCRIPTADOR*\n\nEscribe la palabra *SIGA* seguida del término que no entiendes.\n\n_Ejemplo: siga viaticos_`);
-        } else if (texto === 'btn_2' || texto === '2') {
-            await enviarMensaje(remitente, `⚖️ *DENUNCIA SEGURA*\nTu reporte es fundamental. Realízalo aquí:\n🔗 https://sanjoseenmarcha.uy/denuncias`);
-        } else if (texto === 'btn_3' || texto === '3') {
-            await enviarMensaje(remitente, `🚧 *MONITOR TERRITORIAL*\nReporta incidencias en tiempo real:\n🔗 https://sanjoseenmarcha.uy/monitor-territorial`);
-        } else if (texto === 'btn_4' || texto === '4') {
-            await enviarMensaje(remitente, `🏛️ *INFO INSTITUCIONAL*\n\n📍 *Asamblea 496*\n🕒 *Horario:* Lun a Vie (09:00 - 15:00)\n📞 *Tel:* 4342 9000\n👥 *Gabinete:* https://sanjoseenmarcha.uy/gabinete`);
-        } else if (texto === 'btn_5' || texto === '5') {
-            // ALERTA TELEGRAM
-            if (TG_TOKEN && TG_CHAT_ID) {
-                await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-                    chat_id: TG_CHAT_ID,
-                    text: `🚨 *¡ALERTA HUMANA!*\nCiudadano: *wa.me/${remitente}*\nEsperando en Business Suite.`,
-                    parse_mode: 'Markdown'
-                });
-            }
-            await enviarMensaje(remitente, `👤 *CONEXIÓN HUMANA*\nHe avisado al equipo de San José en Marcha. Un compañero te contactará pronto.`);
+        // ACCIONES POR BOTÓN
+        switch(input) {
+            case 'btn_1':
+                await enviarRespuestaIA(remitente, "📖 *DICCIONARIO CÍVICO*", "La burocracia se diseñó para no entenderse. Nosotros la desencriptamos.\n\nEscribe *SIGA* seguido de la palabra (Ej: siga licitacion).");
+                break;
+            case 'btn_2':
+                await enviarRespuestaIA(remitente, "⚖️ *DENUNCIA SEGURA*", "La transparencia es la base de nuestra marcha. Tu denuncia es procesada con total reserva en nuestro portal oficial:", "https://sanjoseenmarcha.uy/denuncias");
+                break;
+            case 'btn_3':
+                await enviarRespuestaIA(remitente, "🚧 *MONITOR TERRITORIAL*", "No solo reportas, controlas. Mira el mapa de baches, luces e incidencias de todo el departamento aquí:", "https://sanjoseenmarcha.uy/monitor-territorial");
+                break;
+            case 'btn_4':
+                await enviarRespuestaIA(remitente, "🏛️ *INFO INSTITUCIONAL*", "📍 *Sede:* Asamblea 496\n📞 *Central:* 4342 9000\n🕒 *Atención:* Lun a Vie (09-15hs)\n\nConoce a quienes lideran cada área en el Gabinete:", "https://sanjoseenmarcha.uy/gabinete");
+                break;
+            case 'btn_5':
+                if (TG_TOKEN && TG_CHAT_ID) {
+                    await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+                        chat_id: TG_CHAT_ID,
+                        text: `🚨 *ALERTA SIGA:* El vecino *wa.me/${remitente}* solicita contacto humano urgente.`,
+                        parse_mode: 'Markdown'
+                    });
+                }
+                await enviarRespuestaIA(remitente, "👤 *CONEXIÓN HUMANA*", "Tu solicitud ha sido enviada al centro de mando. Un integrante del equipo de San José en Marcha revisará tu caso para responderte por este medio.");
+                break;
         }
 
-        // 3. DICCIONARIO INTELIGENTE
-        if (texto.startsWith('siga ')) {
-            const busqueda = texto.replace('siga ', '').trim();
-            const response = await axios.get(CSV_URL);
-            const dataSiga = Papa.parse(response.data, { header: true, skipEmptyLines: true }).data;
-            const resultado = dataSiga.find(item => {
-                const p = item.Palabra?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
-                return p.includes(busqueda);
-            });
+        // BUSCADOR SIGA
+        if (input.startsWith('siga ')) {
+            const query = input.replace('siga ', '').trim();
+            const resp = await axios.get(CSV_URL);
+            const data = Papa.parse(resp.data, { header: true, skipEmptyLines: true }).data;
+            const resu = data.find(i => i.Palabra?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(query));
 
-            if (resultado) {
-                let resp = `📖 *DICCIONARIO S.I.G.A.*\n\n*Término:* ${resultado.Palabra}\n\n🏛️ *Traducción Ciudadana:*\n${resultado['Traduccion SIGA']}\n`;
-                if(resultado.Impacto) resp += `\n⚠️ *Impacto:* ${resultado.Impacto.replace(/<[^>]*>?/gm, '')}`;
-                await enviarMensaje(remitente, resp);
+            if (resu) {
+                let info = `*Término:* ${resu.Palabra}\n\n🏛️ *Traducción:* ${resu['Traduccion SIGA']}`;
+                if(resu.Impacto) info += `\n\n⚠️ *Impacto en tu vida:* ${resu.Impacto.replace(/<[^>]*>?/gm, '')}`;
+                await enviarRespuestaIA(remitente, "📖 *RESULTADO S.I.G.A.*", info);
             } else {
-                await enviarMensaje(remitente, `❌ No encontré "${busqueda}". Prueba con otra palabra.`);
+                await enviarRespuestaIA(remitente, "❌ *SIN RESULTADOS*", `No encontré "${query}" en nuestro radar. Pero no te preocupes, ya lo he reportado para que nuestro equipo lo traduzca pronto.`);
             }
         }
 
-    } catch (err) { console.error("Error:", err); }
+    } catch (e) { console.error(e); }
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`🤖 BOT-SIGA IA ONLINE`));
+app.get('/webhook', (req, res) => {
+    if (req.query["hub.verify_token"] === 'SIGAMARCHA2026') res.status(200).send(req.query["hub.challenge"]);
+});
+
+app.listen(PORT, '0.0.0.0', () => console.log(`🤖 BOT-SIGA IA v2.0 ONLINE`));
