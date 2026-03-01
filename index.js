@@ -1,4 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const qrcode = require('qrcode-terminal');
 const axios = require('axios');
@@ -14,12 +14,16 @@ app.listen(port, '0.0.0.0', () => console.log(`📡 Puerto web abierto en ${port
 // 2. CONFIGURACIÓN DE BASE DE DATOS
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i310MNaCMYnaSbd1vsl-UjoACcth4hYq9pgq920NATvMyQZTXS_PbP8kA8nxjDRWcj-/pub?output=csv';
 
-// 3. NUEVO MOTOR LIGERO (BAILEYS) CON CAMUFLAJE
+// 3. NUEVO MOTOR LIGERO (BAILEYS) CON RADAR DE VERSIÓN
 async function iniciarAgenteSIGA() {
-    // 🧠 AMNESIA FORZADA: Cambiamos el nombre de la carpeta a v2 para ignorar la basura anterior
-    const { state, saveCreds } = await useMultiFileAuthState('sesion_siga_v2');
+    // 🛡️ RADAR: Obtenemos la última versión de WhatsApp para evitar bloqueos
+    const { version } = await fetchLatestBaileysVersion();
+    console.log(`📡 Protocolo de ataque: WhatsApp Web v${version.join('.')}`);
+
+    const { state, saveCreds } = await useMultiFileAuthState('sesion_siga_v3');
 
     const sock = makeWASocket({
+        version, // <-- ESTO EVITA EL RECHAZO DEL SERVIDOR
         auth: state,
         printQRInTerminal: false, 
         logger: pino({ level: 'silent' }),
@@ -39,10 +43,15 @@ async function iniciarAgenteSIGA() {
         }
 
         if (connection === 'close') {
-            const reconectar = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log('⚠️ Conexión cerrada. Reconectando:', reconectar);
+            // Ahora la consola nos dirá EXACTAMENTE por qué nos rechazan
+            const codigoError = lastDisconnect.error?.output?.statusCode;
+            const reconectar = codigoError !== DisconnectReason.loggedOut;
+            console.log(`⚠️ Conexión cerrada. Código: ${codigoError}. Reconectando: ${reconectar}`);
+            
             if (reconectar) {
-                setTimeout(iniciarAgenteSIGA, 3000); 
+                setTimeout(iniciarAgenteSIGA, 4000); 
+            } else {
+                console.log('❌ Sesión bloqueada. Hay que borrar dispositivos vinculados y empezar de cero.');
             }
         } else if (connection === 'open') {
             console.log('🤖 AGENTE S.I.G.A. EN LÍNEA Y OPERATIVO (MOTOR LIGERO).');
