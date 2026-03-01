@@ -7,7 +7,7 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 10000;
 const META_TOKEN = process.env.META_TOKEN ? process.env.META_TOKEN.trim() : null;
-const PHONE_NUMBER_ID = '961831007021911'; // Esto cambiará al migrar el número
+const PHONE_NUMBER_ID = '961831007021911'; 
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i310MNaCMYnaSbd1vsl-UjoACcth4hYq9pgq920NATvMyQZTXS_PbP8kA8nxjDRWcj-/pub?output=csv';
 
 const TG_TOKEN = process.env.TELEGRAM_TOKEN;
@@ -76,7 +76,7 @@ async function enviarRespuestaIA(remitente, titulo, contenido, link = "") {
     } catch (e) { console.error("Error Respuesta:", e.response?.data || e.message); }
 }
 
-// --- WEBHOOK INTELIGENTE ---
+// --- WEBHOOK ---
 app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
     try {
@@ -92,21 +92,26 @@ app.post('/webhook', async (req, res) => {
             input = msg.interactive.list_reply?.id || "";
         }
 
-        // 1. DISPARADORES UNIVERSALES (PRESENCIA)
-        const saludos = ['hola', 'menu', '0', '.', 'buenas', 'inicio', 'siga', 'ayuda', 'info'];
-        if (saludos.includes(input) || input === "") {
+        // --- RADAR DE SALUDOS AMPLIADO ---
+        const disparadores = [
+            'hola', 'ola', 'buenas', 'buen dia', 'buenas tardes', 'buenas noches', 
+            'q tal', 'que tal', 'como va', 'como estas', 'hey', 'hi', 'hello',
+            'menu', '0', '.', 'inicio', 'siga', 'ayuda', 'info', 'comandante'
+        ];
+
+        if (disparadores.includes(input) || input.length <= 2 || input === "") {
             await enviarMenuPrincipal(remitente);
             return;
         }
 
-        // 2. DETECCIÓN DE INTENCIONES (IA NATURAL)
+        // --- DETECCIÓN DE INTENCIONES ---
         if (input.includes('denuncia') || input.includes('corrupcion') || input.includes('queja')) {
             input = 'opt_2';
         } else if (input.includes('bache') || input.includes('luz') || input.includes('calle') || input.includes('basura')) {
             input = 'opt_3';
         }
 
-        // 3. RESPUESTAS SEGÚN OPCIÓN O INTENCIÓN
+        // --- LÓGICA DE OPCIONES ---
         switch(input) {
             case 'opt_1':
                 await enviarRespuestaIA(remitente, "📖 *DICCIONARIO SIGA*", "La gestión no debe ser un secreto. Escribe cualquier término que no entiendas.\n\n_Ejemplo: licitación, viáticos, TOCAF._");
@@ -115,7 +120,7 @@ app.post('/webhook', async (req, res) => {
                 await enviarRespuestaIA(remitente, "⚖️ *TRANSPARENCIA TOTAL*", "Tu denuncia es procesada con total reserva. San José en Marcha vigila por ti.", "https://sanjoseenmarcha.uy/denuncias");
                 break;
             case 'opt_3':
-                await enviarRespuestaIA(remitente, "🚧 *MONITOR TERRITORIAL*", "Tu reporte alimenta el mapa de gestión en tiempo real. Mira lo que estamos haciendo:", "https://sanjoseenmarcha.uy/monitor-territorial");
+                await enviarRespuestaIA(remitente, "🚧 *MONITOR TERRITORIAL*", "Tu reporte alimenta el mapa de gestión en tiempo real.", "https://sanjoseenmarcha.uy/monitor-territorial");
                 break;
             case 'opt_4':
                 await enviarRespuestaIA(remitente, "🏛️ *INFO INSTITUCIONAL*", "📍 Sede: Asamblea 496\n📞 Tel: 4342 9000\n🕒 Lun a Vie (09-15hs)", "https://sanjoseenmarcha.uy/gabinete");
@@ -131,9 +136,8 @@ app.post('/webhook', async (req, res) => {
                 break;
         }
 
-        // 4. BÚSQUEDA GLOBAL (No hace falta escribir "siga")
-        // Si no fue una opción del menú y tiene más de 3 letras, buscamos en el Excel
-        if (input.length > 3 && !input.startsWith('opt_')) {
+        // --- BÚSQUEDA EN DICCIONARIO ---
+        if (input.length > 2 && !input.startsWith('opt_')) {
             const query = input.replace('siga ', '').trim();
             const resp = await axios.get(CSV_URL);
             const data = Papa.parse(resp.data, { header: true, skipEmptyLines: true }).data;
@@ -148,14 +152,13 @@ app.post('/webhook', async (req, res) => {
                 if(resu.Impacto) info += `\n\n⚠️ *Dato Clave:* ${resu.Impacto.replace(/<[^>]*>?/gm, '')}`;
                 await enviarRespuestaIA(remitente, "📖 *CONOCIMIENTO SIGA*", info);
             }
-            // Si no encuentra nada, no responde para no molestar, o podrías poner un mensaje de error.
         }
 
-    } catch (e) { console.error("Error Crítico:", e); }
+    } catch (e) { console.error("Error:", e); }
 });
 
 app.get('/webhook', (req, res) => {
     if (req.query["hub.verify_token"] === 'SIGAMARCHA2026') res.status(200).send(req.query["hub.challenge"]);
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA v4.0 - SISTEMA LISTO`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA v4.1 - RADAR AMPLIADO`));
