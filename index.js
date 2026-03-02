@@ -99,7 +99,7 @@ app.post('/webhook', async (req, res) => {
                     chat_id: TG_CHAT_ID,
                     text: `💬 _Historial de wa.me/${remitente}:_\n"${msg.text.body}"`,
                     parse_mode: 'Markdown',
-                    disable_notification: true // 🤫 NO HACE RUIDO EN EL CELULAR
+                    disable_notification: true
                 }).catch(e => console.error(e));
             }
         } else if (msg.type === 'interactive') {
@@ -109,12 +109,13 @@ app.post('/webhook', async (req, res) => {
                     chat_id: TG_CHAT_ID,
                     text: `🔘 _wa.me/${remitente} seleccionó una opción del menú._`,
                     parse_mode: 'Markdown',
-                    disable_notification: true // 🤫 NO HACE RUIDO EN EL CELULAR
+                    disable_notification: true
                 }).catch(e => console.error(e));
             }
         }
 
-        const disparadores = ['hola', 'ola', 'buenas', 'buen dia', 'q tal', 'que tal', 'menu', '0', '.', 'inicio', 'siga', 'ayuda', 'info', 'comandante'];
+        // 🎯 AMPLIACIÓN DEL RADAR DE SALUDOS
+        const disparadores = ['hola', 'ola', 'holis', 'olis', 'buenas', 'guenas', 'buen dia', 'buenas tardes', 'buenas noches', 'q tal', 'que tal', 'menu', '0', '.', 'inicio', 'siga', 'ayuda', 'info', 'comandante'];
         if (disparadores.includes(input) || input.length <= 2 || input === "") {
             await enviarMenuPrincipal(remitente); return;
         }
@@ -125,18 +126,17 @@ app.post('/webhook', async (req, res) => {
         switch(input) {
             case 'opt_1':
                 await enviarRespuestaIA(remitente, "📖 *S.I.G.A. EXPLICA*", "La gestión no debe ser un secreto. Escribe cualquier término que no entiendas.\n\n_Ejemplo: licitación, viáticos, presupuesto._");
-                break;
+                return;
             case 'opt_2':
                 await enviarRespuestaIA(remitente, "⚖️ *TRANSPARENCIA TOTAL*", "Tu denuncia es procesada con reserva. San José en Marcha vigila por ti.", "https://sanjoseenmarcha.uy/denuncias");
-                break;
+                return;
             case 'opt_3':
                 await enviarRespuestaIA(remitente, "🚧 *MONITOR TERRITORIAL*", "Tu reporte alimenta el mapa de gestión en tiempo real. Mira lo que estamos haciendo:", "https://sanjoseenmarcha.uy/monitor-territorial");
-                break;
+                return;
             case 'opt_4':
                 await enviarRespuestaIA(remitente, "🏛️ *INFO INSTITUCIONAL*", "📍 Sede: Asamblea 496\n📞 Tel: 4342 9000\n🕒 Lun a Vie (09-15hs)\n\nConoce a quienes lideran cada área en el Gabinete:", "https://sanjoseenmarcha.uy/gabinete");
-                break;
+                return;
             case 'opt_5':
-                // 🚨 ALERTA ROJA: ESTA SÍ HACE RUIDO Y VIBRA
                 if (TG_TOKEN && TG_CHAT_ID) {
                     await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, { 
                         chat_id: TG_CHAT_ID, 
@@ -145,12 +145,13 @@ app.post('/webhook', async (req, res) => {
                     }).catch(e => console.error(e));
                 }
                 await enviarRespuestaIA(remitente, "👤 *CONEXIÓN HUMANA*", "He notificado a la mesa de entrada. Un integrante del equipo de San José en Marcha revisará tu caso pronto.");
-                break;
+                return;
             case 'opt_6':
                 await enviarRespuestaIA(remitente, "📢 *CANAL OFICIAL DE NOVEDADES*", "¡Excelente decisión! Únete a nuestra comunidad oficial para recibir reportes de obras y transparencia en tiempo real.\n\n✅ *Privacidad asegurada.*\n\n👉 *Únete aquí:* \nhttps://whatsapp.com/channel/0029Vb7ZMKZA2pLG3a3SL60T");
-                break;
+                return;
         }
 
+        // 🛡️ BÚSQUEDA Y RED DE SEGURIDAD (Fallback)
         if (input.length > 2 && !input.startsWith('opt_')) {
             const query = input.replace('siga ', '').trim();
             const resp = await axios.get(CSV_URL);
@@ -164,6 +165,9 @@ app.post('/webhook', async (req, res) => {
                 let info = `*Término:* ${resu.Palabra}\n\n🏛️ *Explicación:* ${resu['Traduccion SIGA']}`;
                 if(resu.Impacto) info += `\n\n⚠️ *Dato Clave:* ${resu.Impacto.replace(/<[^>]*>?/gm, '')}`;
                 await enviarRespuestaIA(remitente, "📖 *CONOCIMIENTO S.I.G.A.*", info);
+            } else {
+                // 🛑 SI NO ESTÁ EN EL DICCIONARIO NI ES UN COMANDO, SALTA ESTO:
+                await enviarRespuestaIA(remitente, "🤔 *MENSAJE NO RECONOCIDO*", "No logré encontrar esa palabra en mi base de datos ni reconocer el comando.\n\n👉 *Por favor, escribe 'Hola' o 'Menú' para ver las opciones principales.*");
             }
         }
     } catch (e) { console.error("Error Crítico WA:", e.message); }
@@ -220,4 +224,4 @@ app.post('/telegram-webhook', async (req, res) => {
     }
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v4.8 (RADAR INTELIGENTE) ONLINE`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v4.9 (RED DE SEGURIDAD ACTIVADA) ONLINE`));
