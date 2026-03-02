@@ -11,14 +11,13 @@ const META_TOKEN = process.env.META_TOKEN ? process.env.META_TOKEN.trim() : null
 // --- IDENTIFICADOR OFICIAL URUGUAY (092 404 606) ---
 const PHONE_NUMBER_ID = '1008035252394269'; 
 
-// --- LAS DOS BASES DE DATOS OFICIALES ---
+// --- BASE DE DATOS ÚNICA (DICCIONARIO) ---
 const CSV_DICCIONARIO_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i310MNaCMYnaSbd1vsl-UjoACcth4hYq9pgq920NATvMyQZTXS_PbP8kA8nxjDRWcj-/pub?output=csv';
-const CSV_DMR_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCx1fDUJt7byF6CETqsqIycMFy0A5yt-k-I4hghZWFIHZWgiSZJNjVQI5BIF9YOsaoPJc-HYbUDioT/pub?output=csv';
 
 const TG_TOKEN = process.env.TELEGRAM_TOKEN;
 const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// --- NUEVO MENÚ OMNICANAL (Sincronizado con Web) ---
+// --- MENÚ CON NUEVA BIENVENIDA ---
 async function enviarMenuPrincipal(remitente) {
     try {
         await axios({
@@ -32,7 +31,7 @@ async function enviarMenuPrincipal(remitente) {
                 interactive: {
                     type: 'list',
                     header: { type: 'text', text: '🦅 SISTEMA S.I.G.A.' },
-                    body: { text: '*Bienvenido a la IA de San José en Marcha.*\n\nSoy tu puente directo con la gestión departamental. Elige una opción para operar:' },
+                    body: { text: '👋 *¡Hola! Bienvenido al Agente S.I.G.A.*\n\nSoy la primera Inteligencia Artificial cívica de San José, desarrollada íntegramente por el equipo de *San José en Marcha*.\n\nEstoy aquí para ayudarte a auditar la gestión, decodificar información y recibir tus propuestas para mejorar el departamento.\n\n👇 *Por favor, selecciona una opción para comenzar:*' },
                     footer: { text: 'Transparencia Radical | SanJoseEnMarcha.uy' },
                     action: {
                         button: 'DESPLEGAR MENÚ',
@@ -147,7 +146,7 @@ app.post('/webhook', async (req, res) => {
                 await enviarRespuestaIA(remitente, "🔑 *EL DESENCRIPTADOR CÍVICO*", "Escribe cualquier término que no entiendas de la gestión departamental para decodificarlo.\n\n_Ejemplo: licitación, viáticos, presupuesto._", "https://sanjoseenmarcha.uy/el-desencriptador-civico");
                 return;
             case 'opt_7':
-                await enviarRespuestaIA(remitente, "⚖️ *DATO MATA RELATO*", "Envíanos cualquier frase, promesa o relato de un político. El sistema S.I.G.A. lo cruzará con documentos oficiales para decirte la verdad.\n\n_Ejemplo: Escribe 'horas extras', 'peaje' o 'déficit'._", "https://sanjoseenmarcha.uy/fact-checking");
+                await enviarRespuestaIA(remitente, "⚖️ *DATO MATA RELATO*", "Descubre la verdad detrás de los discursos. Contrastamos los relatos y promesas políticas con la documentación oficial del departamento.\n\nIngresa a nuestra base de datos web para ver todas las verificaciones:", "https://sanjoseenmarcha.uy/fact-checking");
                 return;
             case 'opt_9':
                 await enviarRespuestaIA(remitente, "🚦 *SEMÁFORO DE GESTIÓN*", "Controla el estado de las obras, adjudicaciones y finanzas del departamento con nuestro sistema de auditoría visual interactivo.", "https://sanjoseenmarcha.uy/semaforo");
@@ -179,7 +178,7 @@ app.post('/webhook', async (req, res) => {
                 return;
         }
 
-        // 🛡️ DOBLE MOTOR DE BÚSQUEDA
+        // 🛡️ MOTOR DE BÚSQUEDA ÚNICO (Solo en Diccionario)
         if (input.length > 2 && !input.startsWith('opt_')) {
             const query = input.replace('siga ', '').trim();
 
@@ -197,23 +196,8 @@ app.post('/webhook', async (req, res) => {
                 return;
             }
 
-            const respDMR = await axios.get(CSV_DMR_URL);
-            const dataDMR = Papa.parse(respDMR.data, { header: true, skipEmptyLines: true }).data;
-            const resuDMR = dataDMR.find(i => {
-                const p = i.PalabraClave?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
-                return p !== "" && (p.includes(query) || query.includes(p));
-            });
-
-            if (resuDMR) {
-                let info = `${resuDMR.Veredicto}\n\n${resuDMR.Respuesta}`;
-                if(resuDMR.Link && resuDMR.Link.trim() !== "" && resuDMR.Link.toLowerCase() !== "undefined") {
-                    info += `\n\n🔗 *Fuente/Prueba:* ${resuDMR.Link}`;
-                }
-                await enviarRespuestaIA(remitente, "⚖️ *DATO MATA RELATO*", info);
-                return;
-            }
-
-            await enviarRespuestaIA(remitente, "🤔 *MENSAJE NO RECONOCIDO*", "No logré encontrar esa palabra en mis registros ni reconocer el comando.\n\n💡 Si querías enviar una idea, recuerda empezar la frase con la palabra *PROPONGO*.\n\n👉 *Escribe 'Hola' o 'Menú' para ver las opciones principales.*");
+            // 🛑 SI NO ENCUENTRA NADA EN EL DICCIONARIO: DISPARA EL MENÚ DIRECTAMENTE (Punto 1 resuelto)
+            await enviarMenuPrincipal(remitente);
         }
     } catch (e) { console.error("Error Crítico WA:", e.message); }
 });
@@ -248,4 +232,4 @@ app.post('/telegram-webhook', async (req, res) => {
     } catch (error) { console.error("Error Comando de Fuego:", error.message); }
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v5.2 (OMNICANALIDAD WEB) ONLINE`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v5.3 (PRECISIÓN TÁCTICA) ONLINE`));
