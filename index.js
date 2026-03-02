@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 10000;
 const META_TOKEN = process.env.META_TOKEN ? process.env.META_TOKEN.trim() : null;
 
 // --- IDENTIFICADOR OFICIAL DE URUGUAY ---
-const PHONE_NUMBER_ID = '700280776495393'; 
+const PHONE_NUMBER_ID = '1008035252394269';
 
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i310MNaCMYnaSbd1vsl-UjoACcth4hYq9pgq920NATvMyQZTXS_PbP8kA8nxjDRWcj-/pub?output=csv';
 const TG_TOKEN = process.env.TELEGRAM_TOKEN;
