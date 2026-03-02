@@ -13,12 +13,12 @@ const PHONE_NUMBER_ID = '1008035252394269';
 
 // --- LAS DOS BASES DE DATOS OFICIALES ---
 const CSV_DICCIONARIO_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i310MNaCMYnaSbd1vsl-UjoACcth4hYq9pgq920NATvMyQZTXS_PbP8kA8nxjDRWcj-/pub?output=csv';
-const CSV_HUMO_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCx1fDUJt7byF6CETqsqIycMFy0A5yt-k-I4hghZWFIHZWgiSZJNjVQI5BIF9YOsaoPJc-HYbUDioT/pub?output=csv';
+const CSV_DMR_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSCx1fDUJt7byF6CETqsqIycMFy0A5yt-k-I4hghZWFIHZWgiSZJNjVQI5BIF9YOsaoPJc-HYbUDioT/pub?output=csv';
 
 const TG_TOKEN = process.env.TELEGRAM_TOKEN;
 const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// --- NUEVO MENÚ DE ALTO IMPACTO ---
+// --- NUEVO MENÚ OMNICANAL (Sincronizado con Web) ---
 async function enviarMenuPrincipal(remitente) {
     try {
         await axios({
@@ -33,15 +33,16 @@ async function enviarMenuPrincipal(remitente) {
                     type: 'list',
                     header: { type: 'text', text: '🦅 SISTEMA S.I.G.A.' },
                     body: { text: '*Bienvenido a la IA de San José en Marcha.*\n\nSoy tu puente directo con la gestión departamental. Elige una opción para operar:' },
-                    footer: { text: 'Transparencia Radical | SanJoséEnMarcha.uy' },
+                    footer: { text: 'Transparencia Radical | SanJoseEnMarcha.uy' },
                     action: {
                         button: 'DESPLEGAR MENÚ',
                         sections: [
                             {
                                 title: '🔍 TRANSPARENCIA Y VERDAD',
                                 rows: [
-                                    { id: 'opt_1', title: 'S.I.G.A. Explica', description: 'Diccionario de la Intendencia' },
-                                    { id: 'opt_7', title: 'Detector de Humo', description: 'Verificamos rumores y mitos' }
+                                    { id: 'opt_1', title: 'Desencriptador Cívico', description: 'Diccionario de la Intendencia' },
+                                    { id: 'opt_7', title: 'Dato Mata Relato', description: 'Contrastamos relatos con datos' },
+                                    { id: 'opt_9', title: 'Semáforo de Gestión', description: 'Audita el gasto en tiempo real' }
                                 ]
                             },
                             {
@@ -49,14 +50,15 @@ async function enviarMenuPrincipal(remitente) {
                                 rows: [
                                     { id: 'opt_8', title: 'Mi Barrio Propone', description: 'Envía tu idea para San José' },
                                     { id: 'opt_2', title: 'Portal de Denuncias', description: 'Reportes de ética y transparencia' },
-                                    { id: 'opt_3', title: 'Monitor de Reclamos', description: 'Mapa de baches y servicios' }
+                                    { id: 'opt_3', title: 'Mapa de Inversión', description: 'Monitor de obras y servicios' }
                                 ]
                             },
                             {
-                                title: '👥 COMUNIDAD Y EQUIPO',
+                                title: '🏛️ POLÍTICA Y COMUNIDAD',
                                 rows: [
+                                    { id: 'opt_10', title: 'Radar Legislativo', description: 'Actividad de la Junta y Elecciones' },
                                     { id: 'opt_6', title: 'Canal de Novedades', description: 'Únete a nuestra comunidad oficial' },
-                                    { id: 'opt_5', title: 'Contacto Humano', description: 'Habla con un integrante del equipo' }
+                                    { id: 'opt_5', title: 'Contacto Humano', description: 'Habla con el equipo' }
                                 ]
                             }
                         ]
@@ -139,22 +141,28 @@ app.post('/webhook', async (req, res) => {
             await enviarMenuPrincipal(remitente); return;
         }
 
-        // COMANDOS DEL MENÚ
+        // COMANDOS DEL MENÚ OMNICANAL
         switch(input) {
             case 'opt_1':
-                await enviarRespuestaIA(remitente, "📖 *S.I.G.A. EXPLICA*", "Escribe cualquier término que no entiendas de la gestión departamental.\n\n_Ejemplo: licitación, viáticos, presupuesto._");
+                await enviarRespuestaIA(remitente, "🔑 *EL DESENCRIPTADOR CÍVICO*", "Escribe cualquier término que no entiendas de la gestión departamental para decodificarlo.\n\n_Ejemplo: licitación, viáticos, presupuesto._", "https://sanjoseenmarcha.uy/el-desencriptador-civico");
                 return;
             case 'opt_7':
-                await enviarRespuestaIA(remitente, "🛡️ *DETECTOR DE HUMO*", "Envíanos cualquier rumor, noticia o frase de un político. El sistema S.I.G.A. lo cruzará con documentos oficiales para decirte si es VERDADERO o FALSO.\n\n_Ejemplo: Escribe 'horas extras', 'peaje' o 'déficit'._");
+                await enviarRespuestaIA(remitente, "⚖️ *DATO MATA RELATO*", "Envíanos cualquier frase, promesa o relato de un político. El sistema S.I.G.A. lo cruzará con documentos oficiales para decirte la verdad.\n\n_Ejemplo: Escribe 'horas extras', 'peaje' o 'déficit'._", "https://sanjoseenmarcha.uy/fact-checking");
+                return;
+            case 'opt_9':
+                await enviarRespuestaIA(remitente, "🚦 *SEMÁFORO DE GESTIÓN*", "Controla el estado de las obras, adjudicaciones y finanzas del departamento con nuestro sistema de auditoría visual interactivo.", "https://sanjoseenmarcha.uy/semaforo");
                 return;
             case 'opt_8':
                 await enviarRespuestaIA(remitente, "💡 *MI BARRIO PROPONE*", "¡Tu idea es el motor de San José!\n\nPara enviarla, simplemente escribe un mensaje que empiece con la palabra *PROPONGO* seguida de tu barrio y tu idea.\n\n_Ejemplo: PROPONGO en el Barrio Centro poner más luces en la plaza._");
                 return;
             case 'opt_2':
-                await enviarRespuestaIA(remitente, "⚖️ *TRANSPARENCIA TOTAL*", "Tu denuncia es procesada con reserva. San José en Marcha vigila por ti.", "https://sanjoseenmarcha.uy/denuncias");
+                await enviarRespuestaIA(remitente, "⚖️ *TRANSPARENCIA TOTAL*", "Tu denuncia es procesada con reserva absoluta. San José en Marcha vigila por ti.", "https://sanjoseenmarcha.uy/denuncias");
                 return;
             case 'opt_3':
-                await enviarRespuestaIA(remitente, "🚧 *MONITOR TERRITORIAL*", "Tu reporte alimenta el mapa de gestión en tiempo real. Mira lo que estamos haciendo:", "https://sanjoseenmarcha.uy/monitor-territorial");
+                await enviarRespuestaIA(remitente, "🗺️ *MAPA DE INVERSIÓN*", "Conoce dónde se invierten los recursos y reporta fallas en los servicios públicos de tu barrio. Ingresa al mapa interactivo:", "https://sanjoseenmarcha.uy/mapa-de-inversion");
+                return;
+            case 'opt_10':
+                await enviarRespuestaIA(remitente, "🏛️ *RADAR LEGISLATIVO*", "La transparencia también exige vigilar a quienes legislan. Accede a los informes sobre la Junta Departamental y el escenario electoral.", "https://sanjoseenmarcha.uy/legislativo");
                 return;
             case 'opt_6':
                 await enviarRespuestaIA(remitente, "📢 *CANAL OFICIAL DE NOVEDADES*", "¡Únete a nuestra comunidad oficial para recibir reportes de obras y transparencia!\n\n👉 *Únete aquí:* \nhttps://whatsapp.com/channel/0029Vb7ZMKZA2pLG3a3SL60T");
@@ -171,11 +179,10 @@ app.post('/webhook', async (req, res) => {
                 return;
         }
 
-        // 🛡️ DOBLE MOTOR DE BÚSQUEDA (Diccionario -> FactChecking -> Fallback)
+        // 🛡️ DOBLE MOTOR DE BÚSQUEDA
         if (input.length > 2 && !input.startsWith('opt_')) {
             const query = input.replace('siga ', '').trim();
 
-            // 1. Buscamos en el Diccionario
             const respDict = await axios.get(CSV_DICCIONARIO_URL);
             const dataDict = Papa.parse(respDict.data, { header: true, skipEmptyLines: true }).data;
             const resuDict = dataDict.find(i => {
@@ -186,29 +193,26 @@ app.post('/webhook', async (req, res) => {
             if (resuDict) {
                 let info = `*Término:* ${resuDict.Palabra}\n\n🏛️ *Explicación:* ${resuDict['Traduccion SIGA']}`;
                 if(resuDict.Impacto) info += `\n\n⚠️ *Dato Clave:* ${resuDict.Impacto.replace(/<[^>]*>?/gm, '')}`;
-                await enviarRespuestaIA(remitente, "📖 *CONOCIMIENTO S.I.G.A.*", info);
+                await enviarRespuestaIA(remitente, "🔑 *DESENCRIPTADOR CÍVICO*", info);
                 return;
             }
 
-            // 2. Si no está, Buscamos en el Detector de Humo
-            const respHumo = await axios.get(CSV_HUMO_URL);
-            const dataHumo = Papa.parse(respHumo.data, { header: true, skipEmptyLines: true }).data;
-            const resuHumo = dataHumo.find(i => {
+            const respDMR = await axios.get(CSV_DMR_URL);
+            const dataDMR = Papa.parse(respDMR.data, { header: true, skipEmptyLines: true }).data;
+            const resuDMR = dataDMR.find(i => {
                 const p = i.PalabraClave?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
                 return p !== "" && (p.includes(query) || query.includes(p));
             });
 
-            if (resuHumo) {
-                let info = `${resuHumo.Veredicto}\n\n${resuHumo.Respuesta}`;
-                // Ocultamos el link si la celda está vacía o dice undefined
-                if(resuHumo.Link && resuHumo.Link.trim() !== "" && resuHumo.Link.toLowerCase() !== "undefined") {
-                    info += `\n\n🔗 *Fuente/Prueba:* ${resuHumo.Link}`;
+            if (resuDMR) {
+                let info = `${resuDMR.Veredicto}\n\n${resuDMR.Respuesta}`;
+                if(resuDMR.Link && resuDMR.Link.trim() !== "" && resuDMR.Link.toLowerCase() !== "undefined") {
+                    info += `\n\n🔗 *Fuente/Prueba:* ${resuDMR.Link}`;
                 }
-                await enviarRespuestaIA(remitente, "🛡️ *DETECTOR DE HUMO*", info);
+                await enviarRespuestaIA(remitente, "⚖️ *DATO MATA RELATO*", info);
                 return;
             }
 
-            // 3. Red de Seguridad (Fallback)
             await enviarRespuestaIA(remitente, "🤔 *MENSAJE NO RECONOCIDO*", "No logré encontrar esa palabra en mis registros ni reconocer el comando.\n\n💡 Si querías enviar una idea, recuerda empezar la frase con la palabra *PROPONGO*.\n\n👉 *Escribe 'Hola' o 'Menú' para ver las opciones principales.*");
         }
     } catch (e) { console.error("Error Crítico WA:", e.message); }
@@ -244,4 +248,4 @@ app.post('/telegram-webhook', async (req, res) => {
     } catch (error) { console.error("Error Comando de Fuego:", error.message); }
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v5.0 (MOTOR DUAL Y PROPUESTAS) ONLINE`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v5.2 (OMNICANALIDAD WEB) ONLINE`));
