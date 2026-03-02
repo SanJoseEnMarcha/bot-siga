@@ -15,7 +15,7 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i31
 const TG_TOKEN = process.env.TELEGRAM_TOKEN;
 const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// --- INTERFAZ VISUAL DE ALTO IMPACTO ---
+// --- INTERFAZ VISUAL ---
 async function enviarMenuPrincipal(remitente) {
     try {
         await axios({
@@ -77,7 +77,9 @@ async function enviarRespuestaIA(remitente, titulo, contenido, link = "") {
     } catch (e) { console.error("Error Respuesta:", e.response?.data || e.message); }
 }
 
-// --- WEBHOOK INTELIGENTE ---
+// ==========================================
+// 1. EL "OÍDO" DE WHATSAPP (Recibe mensajes)
+// ==========================================
 app.post('/webhook', async (req, res) => {
     res.sendStatus(200);
     try {
@@ -89,21 +91,27 @@ app.post('/webhook', async (req, res) => {
         let input = "";
         if (msg.type === 'text') {
             input = msg.text.body.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            
+            // Reenviar el mensaje de texto a Telegram para que el equipo lo lea
+            if (TG_TOKEN && TG_CHAT_ID && input.length > 0) {
+                await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+                    chat_id: TG_CHAT_ID,
+                    text: `📩 *Mensaje de wa.me/${remitente}:*\n"${msg.text.body}"\n\n_Para responder, copie esto:_ \n\`/responder ${remitente} Escriba su respuesta aquí\``,
+                    parse_mode: 'Markdown'
+                }).catch(e => console.error(e));
+            }
         } else if (msg.type === 'interactive') {
             input = msg.interactive.list_reply?.id || "";
         }
 
-        // --- RADAR DE SALUDOS Y RESET ---
         const disparadores = ['hola', 'ola', 'buenas', 'buen dia', 'q tal', 'que tal', 'menu', '0', '.', 'inicio', 'siga', 'ayuda', 'info', 'comandante'];
         if (disparadores.includes(input) || input.length <= 2 || input === "") {
             await enviarMenuPrincipal(remitente); return;
         }
 
-        // --- DETECCIÓN DE INTENCIONES (IA NATURAL) ---
         if (input.includes('denuncia') || input.includes('queja') || input.includes('corrupcion')) input = 'opt_2';
         else if (input.includes('bache') || input.includes('luz') || input.includes('basura') || input.includes('calle')) input = 'opt_3';
 
-        // --- LÓGICA DE OPCIONES ---
         switch(input) {
             case 'opt_1':
                 await enviarRespuestaIA(remitente, "📖 *S.I.G.A. EXPLICA*", "La gestión no debe ser un secreto. Escribe cualquier término que no entiendas.\n\n_Ejemplo: licitación, viáticos, presupuesto._");
@@ -124,14 +132,10 @@ app.post('/webhook', async (req, res) => {
                 await enviarRespuestaIA(remitente, "👤 *CONEXIÓN HUMANA*", "He notificado a la mesa de entrada. Un integrante del equipo de San José en Marcha revisará tu caso pronto.");
                 break;
             case 'opt_6':
-                if (TG_TOKEN && TG_CHAT_ID) {
-                    await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, { chat_id: TG_CHAT_ID, text: `📢 *INTERÉS EN CANAL:* El vecino *wa.me/${remitente}* solicitó el link del canal.`, parse_mode: 'Markdown' });
-                }
                 await enviarRespuestaIA(remitente, "📢 *CANAL OFICIAL DE NOVEDADES*", "¡Excelente decisión! Únete a nuestra comunidad oficial para recibir reportes de obras y transparencia en tiempo real.\n\n✅ *Privacidad asegurada.*\n\n👉 *Únete aquí:* \nhttps://whatsapp.com/channel/0029Vb7ZMKZA2pLG3a3SL60T");
                 break;
         }
 
-        // --- BÚSQUEDA GLOBAL EN DICCIONARIO ---
         if (input.length > 2 && !input.startsWith('opt_')) {
             const query = input.replace('siga ', '').trim();
             const resp = await axios.get(CSV_URL);
@@ -147,11 +151,61 @@ app.post('/webhook', async (req, res) => {
                 await enviarRespuestaIA(remitente, "📖 *CONOCIMIENTO S.I.G.A.*", info);
             }
         }
-    } catch (e) { console.error("Error Crítico:", e.response?.data || e.message); }
+    } catch (e) { console.error("Error Crítico WA:", e.message); }
 });
 
 app.get('/webhook', (req, res) => {
     if (req.query["hub.verify_token"] === 'SIGAMARCHA2026') res.status(200).send(req.query["hub.challenge"]);
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v4.5 ONLINE`));
+// ==========================================
+// 2. EL "COMANDO DE FUEGO" (Recibe órdenes de Telegram)
+// ==========================================
+app.post('/telegram-webhook', async (req, res) => {
+    res.sendStatus(200); // Siempre responder OK a Telegram
+    try {
+        const tgMsg = req.body.message;
+        if (!tgMsg || !tgMsg.text) return;
+
+        const texto = tgMsg.text.trim();
+        
+        // Si el mensaje en Telegram empieza con /responder
+        if (texto.startsWith('/responder')) {
+            const partes = texto.split(' ');
+            
+            if (partes.length < 3) {
+                await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+                    chat_id: tgMsg.chat.id,
+                    text: `⚠️ *Error de formato.*\nDebe escribir: \`/responder NUMERO Su mensaje\``,
+                    parse_mode: 'Markdown'
+                });
+                return;
+            }
+
+            const numeroDestino = partes[1]; // El número del vecino
+            const mensajeRespuesta = partes.slice(2).join(' '); // Todo el texto que sigue
+
+            // Disparamos el mensaje hacia WhatsApp
+            await axios({
+                method: 'POST',
+                url: `https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`,
+                headers: { 'Authorization': `Bearer ${META_TOKEN}`, 'Content-Type': 'application/json' },
+                data: {
+                    messaging_product: 'whatsapp',
+                    to: numeroDestino,
+                    text: { body: mensajeRespuesta }
+                }
+            });
+
+            // Confirmamos en el grupo de Telegram que la misión fue un éxito
+            await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+                chat_id: tgMsg.chat.id,
+                text: `✅ *Respuesta enviada con éxito al vecino ${numeroDestino}*`
+            });
+        }
+    } catch (error) {
+        console.error("Error en Comando de Fuego:", error.message);
+    }
+});
+
+app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v4.6 (CON CRM TELEGRAM) ONLINE`));
