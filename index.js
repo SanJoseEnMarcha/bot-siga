@@ -17,7 +17,7 @@ const CSV_DICCIONARIO_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTK
 const TG_TOKEN = process.env.TELEGRAM_TOKEN;
 const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// --- MENÚ CON NUEVA BIENVENIDA E IDENTIDAD VISUAL ---
+// --- MENÚ CON BIENVENIDA INCLUSIVA Y 10 BOTONES ---
 async function enviarMenuPrincipal(remitente) {
     try {
         await axios({
@@ -31,7 +31,7 @@ async function enviarMenuPrincipal(remitente) {
                 interactive: {
                     type: 'list',
                     header: { type: 'text', text: '⚙️ SISTEMA S.I.G.A. ☀️' },
-                    body: { text: '👋 *¡Hola! Bienvenido al Agente S.I.G.A.*\n\nSoy la primera Inteligencia Artificial cívica de San José, desarrollada íntegramente por el equipo de *San José en Marcha*.\n\nEstoy aquí para ayudarte a auditar la gestión, decodificar información y recibir tus propuestas para mejorar el departamento.\n\n👇 *Por favor, selecciona una opción para comenzar:*' },
+                    body: { text: '👋 *¡Hola! Soy Bot-S.I.G.A.*\n\nLa primera Inteligencia Artificial cívica de San José, desarrollada íntegramente por el equipo de *San José en Marcha*.\n\nEstoy aquí para ayudarte a auditar la gestión, decodificar información y recibir tus propuestas para mejorar el departamento.\n\n👇 *Por favor, selecciona una opción para comenzar:*' },
                     footer: { text: 'Transparencia Radical | SanJoseEnMarcha.uy' },
                     action: {
                         button: 'DESPLEGAR MENÚ',
@@ -55,8 +55,9 @@ async function enviarMenuPrincipal(remitente) {
                             {
                                 title: '🏛️ POLÍTICA Y COMUNIDAD',
                                 rows: [
-                                    { id: 'opt_10', title: 'Radar Legislativo', description: 'Actividad de la Junta y Elecciones' },
-                                    { id: 'opt_6', title: 'Canal de Novedades', description: 'Únete a nuestra comunidad oficial' },
+                                    { id: 'opt_10', title: 'Radar Legislativo', description: 'Actividad de la Junta Deptal.' },
+                                    { id: 'opt_11', title: 'Radar Electoral', description: 'Monitor de la campaña 2025' },
+                                    { id: 'opt_6', title: 'Canal de Novedades', description: 'Únete a la comunidad oficial' },
                                     { id: 'opt_5', title: 'Contacto Humano', description: 'Habla con el equipo' }
                                 ]
                             }
@@ -96,7 +97,6 @@ app.post('/webhook', async (req, res) => {
         let input = "";
         let rawInput = "";
         
-        // --- RADAR INTELIGENTE E INTERCEPCIÓN ---
         if (msg.type === 'text') {
             rawInput = msg.text.body;
             input = rawInput.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
@@ -121,26 +121,11 @@ app.post('/webhook', async (req, res) => {
             }
         }
 
-        // 💡 INTERCEPTOR DE PROPUESTAS ("MI BARRIO PROPONE")
-        if (input.startsWith('propongo')) {
-            if (TG_TOKEN && TG_CHAT_ID) {
-                await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-                    chat_id: TG_CHAT_ID,
-                    text: `💡 *NUEVA PROPUESTA CIUDADANA* 💡\nDe: wa.me/${remitente}\n\n"${rawInput}"`,
-                    parse_mode: 'Markdown'
-                }).catch(e => console.error(e));
-            }
-            await enviarRespuestaIA(remitente, "✅ *PROPUESTA REGISTRADA*", "¡Excelente iniciativa! Hemos archivado tu propuesta y notificado al equipo técnico de San José en Marcha. La sumaremos a nuestro Banco de Proyectos barriales.");
-            return;
-        }
-
-        // RADAR DE SALUDOS
         const disparadores = ['hola', 'ola', 'holis', 'olis', 'buenas', 'guenas', 'buen dia', 'buenas tardes', 'buenas noches', 'q tal', 'que tal', 'menu', '0', '.', 'inicio', 'siga', 'ayuda', 'info', 'comandante'];
         if (disparadores.includes(input) || input.length <= 2 || input === "") {
             await enviarMenuPrincipal(remitente); return;
         }
 
-        // COMANDOS DEL MENÚ OMNICANAL
         switch(input) {
             case 'opt_1':
                 await enviarRespuestaIA(remitente, "🔑 *EL DESENCRIPTADOR CÍVICO*", "Escribe cualquier término que no entiendas de la gestión departamental para decodificarlo.\n\n_Ejemplo: licitación, viáticos, presupuesto._", "https://sanjoseenmarcha.uy/el-desencriptador-civico");
@@ -152,7 +137,7 @@ app.post('/webhook', async (req, res) => {
                 await enviarRespuestaIA(remitente, "🚦 *SEMÁFORO DE GESTIÓN*", "Controla el estado de las obras, adjudicaciones y finanzas del departamento con nuestro sistema de auditoría visual interactivo.", "https://sanjoseenmarcha.uy/semaforo");
                 return;
             case 'opt_8':
-                await enviarRespuestaIA(remitente, "💡 *MI BARRIO PROPONE*", "¡Tu idea es el motor de San José!\n\nPara enviarla, simplemente escribe un mensaje que empiece con la palabra *PROPONGO* seguida de tu barrio y tu idea.\n\n_Ejemplo: PROPONGO en el Barrio Centro poner más luces en la plaza._");
+                await enviarRespuestaIA(remitente, "💡 *MI BARRIO PROPONE*", "Las verdaderas soluciones nacen de los vecinos que caminan la calle todos los días.\n\nIngresa a nuestra plataforma web para dejar tu idea estructurada y que nuestro equipo la transforme en un proyecto real:", "https://sanjoseenmarcha.uy/propuestas");
                 return;
             case 'opt_2':
                 await enviarRespuestaIA(remitente, "⚖️ *TRANSPARENCIA TOTAL*", "Tu denuncia es procesada con reserva absoluta. San José en Marcha vigila por ti.", "https://sanjoseenmarcha.uy/denuncias");
@@ -161,7 +146,10 @@ app.post('/webhook', async (req, res) => {
                 await enviarRespuestaIA(remitente, "🗺️ *MAPA DE INVERSIÓN*", "Conoce dónde se invierten los recursos y reporta fallas en los servicios públicos de tu barrio. Ingresa al mapa interactivo:", "https://sanjoseenmarcha.uy/mapa-de-inversion");
                 return;
             case 'opt_10':
-                await enviarRespuestaIA(remitente, "🏛️ *RADAR LEGISLATIVO*", "La transparencia también exige vigilar a quienes legislan. Accede a los informes sobre la Junta Departamental y el escenario electoral.", "https://sanjoseenmarcha.uy/legislativo");
+                await enviarRespuestaIA(remitente, "🏛️ *RADAR LEGISLATIVO*", "La transparencia también exige vigilar a quienes legislan. Accede a los informes sobre la actividad de la Junta Departamental.", "https://sanjoseenmarcha.uy/legislativo");
+                return;
+            case 'opt_11':
+                await enviarRespuestaIA(remitente, "🗳️ *RADAR ELECTORAL*", "Monitorizamos los movimientos políticos, las alianzas y el termómetro de la campaña de cara a las próximas elecciones.", "https://sanjoseenmarcha.uy/radar-electoral");
                 return;
             case 'opt_6':
                 await enviarRespuestaIA(remitente, "📢 *CANAL OFICIAL DE NOVEDADES*", "¡Únete a nuestra comunidad oficial para recibir reportes de obras y transparencia!\n\n👉 *Únete aquí:* \nhttps://whatsapp.com/channel/0029Vb7ZMKZA2pLG3a3SL60T");
@@ -178,7 +166,6 @@ app.post('/webhook', async (req, res) => {
                 return;
         }
 
-        // 🛡️ MOTOR DE BÚSQUEDA ÚNICO (Solo en Diccionario)
         if (input.length > 2 && !input.startsWith('opt_')) {
             const query = input.replace('siga ', '').trim();
 
@@ -196,7 +183,6 @@ app.post('/webhook', async (req, res) => {
                 return;
             }
 
-            // 🛑 SI NO ENCUENTRA NADA EN EL DICCIONARIO: DISPARA EL MENÚ DIRECTAMENTE
             await enviarMenuPrincipal(remitente);
         }
     } catch (e) { console.error("Error Crítico WA:", e.message); }
@@ -206,9 +192,6 @@ app.get('/webhook', (req, res) => {
     if (req.query["hub.verify_token"] === 'SIGAMARCHA2026') res.status(200).send(req.query["hub.challenge"]);
 });
 
-// ==========================================
-// 2. EL "COMANDO DE FUEGO" (Recibe órdenes de Telegram)
-// ==========================================
 app.post('/telegram-webhook', async (req, res) => {
     res.sendStatus(200); 
     try {
@@ -232,4 +215,4 @@ app.post('/telegram-webhook', async (req, res) => {
     } catch (error) { console.error("Error Comando de Fuego:", error.message); }
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v5.4 (IDENTIDAD VISUAL: ENGRANAJE Y SOL) ONLINE`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🤖 BOT S.I.G.A. v5.5 (INCLUSIVO Y RADARES SEPARADOS) ONLINE`));
