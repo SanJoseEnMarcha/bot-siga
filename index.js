@@ -89,19 +89,29 @@ app.post('/webhook', async (req, res) => {
         const remitente = msg.from;
 
         let input = "";
+        
+        // --- RADAR INTELIGENTE (Historial Silencioso) ---
         if (msg.type === 'text') {
             input = msg.text.body.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
             
-            // Reenviar el mensaje de texto a Telegram para que el equipo lo lea
             if (TG_TOKEN && TG_CHAT_ID && input.length > 0) {
                 await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
                     chat_id: TG_CHAT_ID,
-                    text: `📩 *Mensaje de wa.me/${remitente}:*\n"${msg.text.body}"\n\n_Para responder, copie esto:_ \n\`/responder ${remitente} Escriba su respuesta aquí\``,
-                    parse_mode: 'Markdown'
+                    text: `💬 _Historial de wa.me/${remitente}:_\n"${msg.text.body}"`,
+                    parse_mode: 'Markdown',
+                    disable_notification: true // 🤫 NO HACE RUIDO EN EL CELULAR
                 }).catch(e => console.error(e));
             }
         } else if (msg.type === 'interactive') {
             input = msg.interactive.list_reply?.id || "";
+            if (TG_TOKEN && TG_CHAT_ID) {
+                await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+                    chat_id: TG_CHAT_ID,
+                    text: `🔘 _wa.me/${remitente} seleccionó una opción del menú._`,
+                    parse_mode: 'Markdown',
+                    disable_notification: true // 🤫 NO HACE RUIDO EN EL CELULAR
+                }).catch(e => console.error(e));
+            }
         }
 
         const disparadores = ['hola', 'ola', 'buenas', 'buen dia', 'q tal', 'que tal', 'menu', '0', '.', 'inicio', 'siga', 'ayuda', 'info', 'comandante'];
@@ -126,8 +136,13 @@ app.post('/webhook', async (req, res) => {
                 await enviarRespuestaIA(remitente, "🏛️ *INFO INSTITUCIONAL*", "📍 Sede: Asamblea 496\n📞 Tel: 4342 9000\n🕒 Lun a Vie (09-15hs)\n\nConoce a quienes lideran cada área en el Gabinete:", "https://sanjoseenmarcha.uy/gabinete");
                 break;
             case 'opt_5':
+                // 🚨 ALERTA ROJA: ESTA SÍ HACE RUIDO Y VIBRA
                 if (TG_TOKEN && TG_CHAT_ID) {
-                    await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, { chat_id: TG_CHAT_ID, text: `🚨 *ALERTA:* Vecino *wa.me/${remitente}* solicita contacto humano.`, parse_mode: 'Markdown' });
+                    await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, { 
+                        chat_id: TG_CHAT_ID, 
+                        text: `🚨 🚨 🚨 *ALERTA DE ASISTENCIA HUMANA* 🚨 🚨 🚨\n\nEl vecino *wa.me/${remitente}* necesita atención.\n\n_Para responderle desde aquí, copie y pegue:_ \n\`/responder ${remitente} Hola vecino, el equipo de San José en Marcha está a su disposición. ¿En qué lo podemos ayudar?\``, 
+                        parse_mode: 'Markdown' 
+                    }).catch(e => console.error(e));
                 }
                 await enviarRespuestaIA(remitente, "👤 *CONEXIÓN HUMANA*", "He notificado a la mesa de entrada. Un integrante del equipo de San José en Marcha revisará tu caso pronto.");
                 break;
@@ -162,14 +177,13 @@ app.get('/webhook', (req, res) => {
 // 2. EL "COMANDO DE FUEGO" (Recibe órdenes de Telegram)
 // ==========================================
 app.post('/telegram-webhook', async (req, res) => {
-    res.sendStatus(200); // Siempre responder OK a Telegram
+    res.sendStatus(200); 
     try {
         const tgMsg = req.body.message;
         if (!tgMsg || !tgMsg.text) return;
 
         const texto = tgMsg.text.trim();
         
-        // Si el mensaje en Telegram empieza con /responder
         if (texto.startsWith('/responder')) {
             const partes = texto.split(' ');
             
@@ -182,10 +196,9 @@ app.post('/telegram-webhook', async (req, res) => {
                 return;
             }
 
-            const numeroDestino = partes[1]; // El número del vecino
-            const mensajeRespuesta = partes.slice(2).join(' '); // Todo el texto que sigue
+            const numeroDestino = partes[1]; 
+            const mensajeRespuesta = partes.slice(2).join(' '); 
 
-            // Disparamos el mensaje hacia WhatsApp
             await axios({
                 method: 'POST',
                 url: `https://graph.facebook.com/v22.0/${PHONE_NUMBER_ID}/messages`,
@@ -197,7 +210,6 @@ app.post('/telegram-webhook', async (req, res) => {
                 }
             });
 
-            // Confirmamos en el grupo de Telegram que la misión fue un éxito
             await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
                 chat_id: tgMsg.chat.id,
                 text: `✅ *Respuesta enviada con éxito al vecino ${numeroDestino}*`
@@ -208,4 +220,4 @@ app.post('/telegram-webhook', async (req, res) => {
     }
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v4.6 (CON CRM TELEGRAM) ONLINE`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v4.8 (RADAR INTELIGENTE) ONLINE`));
