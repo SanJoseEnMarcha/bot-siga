@@ -17,7 +17,7 @@ const CSV_DICCIONARIO_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTK
 const TG_TOKEN = process.env.TELEGRAM_TOKEN;
 const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// --- MENÚ CON NUEVA BIENVENIDA ---
+// --- MENÚ CON NUEVA BIENVENIDA E IDENTIDAD VISUAL ---
 async function enviarMenuPrincipal(remitente) {
     try {
         await axios({
@@ -30,7 +30,7 @@ async function enviarMenuPrincipal(remitente) {
                 type: 'interactive',
                 interactive: {
                     type: 'list',
-                    header: { type: 'text', text: '🦅 SISTEMA S.I.G.A.' },
+                    header: { type: 'text', text: '⚙️ SISTEMA S.I.G.A. ☀️' },
                     body: { text: '👋 *¡Hola! Bienvenido al Agente S.I.G.A.*\n\nSoy la primera Inteligencia Artificial cívica de San José, desarrollada íntegramente por el equipo de *San José en Marcha*.\n\nEstoy aquí para ayudarte a auditar la gestión, decodificar información y recibir tus propuestas para mejorar el departamento.\n\n👇 *Por favor, selecciona una opción para comenzar:*' },
                     footer: { text: 'Transparencia Radical | SanJoseEnMarcha.uy' },
                     action: {
@@ -71,7 +71,7 @@ async function enviarMenuPrincipal(remitente) {
 async function enviarRespuestaIA(remitente, titulo, contenido, link = "") {
     let cuerpo = `${titulo}\n\n${contenido}`;
     if(link) cuerpo += `\n\n🔗 *Enlace:* ${link}`;
-    cuerpo += `\n\n__________________________\n_Envía *0* para el Menú o visita_\n*SanJoseEnMarcha.uy* 🦅`;
+    cuerpo += `\n\n__________________________\n_Envía *0* para el Menú o visita_\n*SanJoseEnMarcha.uy* ⚙️☀️`;
     try {
         await axios({
             method: 'POST',
@@ -196,7 +196,7 @@ app.post('/webhook', async (req, res) => {
                 return;
             }
 
-            // 🛑 SI NO ENCUENTRA NADA EN EL DICCIONARIO: DISPARA EL MENÚ DIRECTAMENTE (Punto 1 resuelto)
+            // 🛑 SI NO ENCUENTRA NADA EN EL DICCIONARIO: DISPARA EL MENÚ DIRECTAMENTE
             await enviarMenuPrincipal(remitente);
         }
     } catch (e) { console.error("Error Crítico WA:", e.message); }
@@ -232,4 +232,4 @@ app.post('/telegram-webhook', async (req, res) => {
     } catch (error) { console.error("Error Comando de Fuego:", error.message); }
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v5.3 (PRECISIÓN TÁCTICA) ONLINE`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🤖 AGENTE SIGA URUGUAY v5.4 (IDENTIDAD VISUAL: ENGRANAJE Y SOL) ONLINE`));
