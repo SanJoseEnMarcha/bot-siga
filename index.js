@@ -8,14 +8,14 @@ app.use(express.json());
 const PORT = process.env.PORT || 10000;
 const META_TOKEN = process.env.META_TOKEN ? process.env.META_TOKEN.trim() : null;
 
-// --- IDENTIFICADOR OFICIAL DE URUGUAY ---
-const PHONE_NUMBER_ID = '1008035252394269';
+// --- IDENTIFICADOR OFICIAL URUGUAY (092 404 606) ---
+const PHONE_NUMBER_ID = '1008035252394269'; 
 
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTKKZ2XtvAj_i310MNaCMYnaSbd1vsl-UjoACcth4hYq9pgq920NATvMyQZTXS_PbP8kA8nxjDRWcj-/pub?output=csv';
 const TG_TOKEN = process.env.TELEGRAM_TOKEN;
 const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// --- INTERFAZ DE ALTO IMPACTO ---
+// --- INTERFAZ VISUAL DE ALTO IMPACTO ---
 async function enviarMenuPrincipal(remitente) {
     try {
         await axios({
@@ -93,38 +93,45 @@ app.post('/webhook', async (req, res) => {
             input = msg.interactive.list_reply?.id || "";
         }
 
-        const disparadores = ['hola', 'ola', 'buenas', 'buen dia', 'q tal', 'que tal', 'menu', '0', '.', 'inicio', 'siga', 'ayuda'];
+        // --- RADAR DE SALUDOS Y RESET ---
+        const disparadores = ['hola', 'ola', 'buenas', 'buen dia', 'q tal', 'que tal', 'menu', '0', '.', 'inicio', 'siga', 'ayuda', 'info', 'comandante'];
         if (disparadores.includes(input) || input.length <= 2 || input === "") {
             await enviarMenuPrincipal(remitente); return;
         }
 
-        if (input.includes('denuncia') || input.includes('queja')) input = 'opt_2';
-        else if (input.includes('bache') || input.includes('luz') || input.includes('basura')) input = 'opt_3';
+        // --- DETECCIÓN DE INTENCIONES (IA NATURAL) ---
+        if (input.includes('denuncia') || input.includes('queja') || input.includes('corrupcion')) input = 'opt_2';
+        else if (input.includes('bache') || input.includes('luz') || input.includes('basura') || input.includes('calle')) input = 'opt_3';
 
+        // --- LÓGICA DE OPCIONES ---
         switch(input) {
             case 'opt_1':
-                await enviarRespuestaIA(remitente, "📖 *S.I.G.A. EXPLICA*", "La gestión no debe ser un secreto. Escribe cualquier término que no entiendas.\n\n_Ejemplo: licitación, viáticos, TOCAF._");
+                await enviarRespuestaIA(remitente, "📖 *S.I.G.A. EXPLICA*", "La gestión no debe ser un secreto. Escribe cualquier término que no entiendas.\n\n_Ejemplo: licitación, viáticos, presupuesto._");
                 break;
             case 'opt_2':
                 await enviarRespuestaIA(remitente, "⚖️ *TRANSPARENCIA TOTAL*", "Tu denuncia es procesada con reserva. San José en Marcha vigila por ti.", "https://sanjoseenmarcha.uy/denuncias");
                 break;
             case 'opt_3':
-                await enviarRespuestaIA(remitente, "🚧 *MONITOR TERRITORIAL*", "Tu reporte alimenta el mapa de gestión en tiempo real.", "https://sanjoseenmarcha.uy/monitor-territorial");
+                await enviarRespuestaIA(remitente, "🚧 *MONITOR TERRITORIAL*", "Tu reporte alimenta el mapa de gestión en tiempo real. Mira lo que estamos haciendo:", "https://sanjoseenmarcha.uy/monitor-territorial");
                 break;
             case 'opt_4':
-                await enviarRespuestaIA(remitente, "🏛️ *INFO INSTITUCIONAL*", "📍 Sede: Asamblea 496\n📞 Tel: 4342 9000\n🕒 Lun a Vie (09-15hs)", "https://sanjoseenmarcha.uy/gabinete");
+                await enviarRespuestaIA(remitente, "🏛️ *INFO INSTITUCIONAL*", "📍 Sede: Asamblea 496\n📞 Tel: 4342 9000\n🕒 Lun a Vie (09-15hs)\n\nConoce a quienes lideran cada área en el Gabinete:", "https://sanjoseenmarcha.uy/gabinete");
                 break;
             case 'opt_5':
                 if (TG_TOKEN && TG_CHAT_ID) {
                     await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, { chat_id: TG_CHAT_ID, text: `🚨 *ALERTA:* Vecino *wa.me/${remitente}* solicita contacto humano.`, parse_mode: 'Markdown' });
                 }
-                await enviarRespuestaIA(remitente, "👤 *CONEXIÓN HUMANA*", "He notificado a la mesa de entrada. Un compañero revisará tu caso pronto.");
+                await enviarRespuestaIA(remitente, "👤 *CONEXIÓN HUMANA*", "He notificado a la mesa de entrada. Un integrante del equipo de San José en Marcha revisará tu caso pronto.");
                 break;
             case 'opt_6':
-                await enviarRespuestaIA(remitente, "📢 *CANAL DE NOVEDADES*", "Únete para recibir la información que la Intendencia no siempre cuenta.", "https://whatsapp.com/channel/0029VbC0IAD65yDKij0cZ62e");
+                if (TG_TOKEN && TG_CHAT_ID) {
+                    await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, { chat_id: TG_CHAT_ID, text: `📢 *INTERÉS EN CANAL:* El vecino *wa.me/${remitente}* solicitó el link del canal.`, parse_mode: 'Markdown' });
+                }
+                await enviarRespuestaIA(remitente, "📢 *CANAL OFICIAL DE NOVEDADES*", "¡Excelente decisión! Únete a nuestra comunidad oficial para recibir reportes de obras y transparencia en tiempo real.\n\n✅ *Privacidad asegurada.*\n\n👉 *Únete aquí:* \nhttps://whatsapp.com/channel/0029Vb7ZMKZA2pLG3a3SL60T");
                 break;
         }
 
+        // --- BÚSQUEDA GLOBAL EN DICCIONARIO ---
         if (input.length > 2 && !input.startsWith('opt_')) {
             const query = input.replace('siga ', '').trim();
             const resp = await axios.get(CSV_URL);
@@ -133,13 +140,14 @@ app.post('/webhook', async (req, res) => {
                 const p = i.Palabra?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
                 return p.includes(query);
             });
+
             if (resu) {
                 let info = `*Término:* ${resu.Palabra}\n\n🏛️ *Explicación:* ${resu['Traduccion SIGA']}`;
-                if(resu.Impacto) info += `\n\n⚠️ *Dato:* ${resu.Impacto.replace(/<[^>]*>?/gm, '')}`;
-                await enviarRespuestaIA(remitente, "📖 *CONOCIMIENTO SIGA*", info);
+                if(resu.Impacto) info += `\n\n⚠️ *Dato Clave:* ${resu.Impacto.replace(/<[^>]*>?/gm, '')}`;
+                await enviarRespuestaIA(remitente, "📖 *CONOCIMIENTO S.I.G.A.*", info);
             }
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Error Crítico:", e.response?.data || e.message); }
 });
 
 app.get('/webhook', (req, res) => {
